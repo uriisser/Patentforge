@@ -1,0 +1,25 @@
+PATENT: US4,748,552 -- Immersion Liquid Cooling System for High-Density Data Center Racks
+Filed: 1986-03-14  |  Issued: 1988-05-31  |  Assignee: ComputeTherm Inc.
+
+ABSTRACT:
+A system and method for cooling high-density electronic equipment racks by fully immersing
+circuit boards in a dielectric fluorocarbon liquid maintained at a controlled temperature.
+Heat exchangers mounted along the rack sidewalls transfer thermal energy to a secondary
+chilled-water loop, eliminating the need for forced-air cooling entirely.
+
+CLAIMS (selected):
+1. A liquid immersion cooling apparatus comprising: a sealed rack enclosure; a reservoir of
+   dielectric fluid filling said enclosure to a level above all installed circuit modules;
+   a primary heat-exchanger coil in thermal contact with said fluid; and a fluid circulation
+   pump maintaining laminar flow past heat-generating components.
+
+2. The apparatus of claim 1, wherein the dielectric fluid is a perfluorocarbon compound
+   with a boiling point between 50 deg-C and 80 deg-C at atmospheric pressure, enabling
+   two-phase heat transfer at typical CPU junction temperatures.
+
+DESCRIPTION (excerpt):
+As transistor densities increased through the mid-1980s, conventional forced-air cooling
+could no longer dissipate more than approximately 25 W per rack unit without unacceptable
+noise and infrastructure cost. The present invention addresses this limitation by replacing
+air with a thermally superior liquid medium, achieving heat-flux capacities exceeding 200 W
+per rack unit while reducing audible noise to near zero.

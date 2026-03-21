@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IP-Native Venture Engine</title>
+<style>
+  /* ── Reset & base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --border:    #30363d;
+    --accent:    #58a6ff;
+    --accent2:   #3fb950;
+    --warn:      #f0883e;
+    --text:      #e6edf3;
+    --muted:     #8b949e;
+    --radius:    8px;
+    --font:      'Segoe UI', system-ui, sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 4rem;
+  }
+
+  /* ── Layout ── */
+  .shell {
+    width: 100%;
+    max-width: 780px;
+  }
+
+  header {
+    text-align: center;
+    padding: 2.5rem 0 2rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+  header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  header p {
+    color: var(--muted);
+    margin-top: .4rem;
+    font-size: .95rem;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .card h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 1.1rem;
+  }
+
+  /* ── Screens ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── Domain list ── */
+  .domain-grid {
+    display: grid;
+    gap: .45rem;
+  }
+  .domain-item {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .65rem .9rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    user-select: none;
+  }
+  .domain-item:hover { border-color: var(--accent); background: rgba(88,166,255,.06); }
+  .domain-item.selected { border-color: var(--accent); background: rgba(88,166,255,.12); }
+  .domain-item .id-badge {
+    min-width: 28px;
+    text-align: center;
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--accent);
+    background: rgba(88,166,255,.14);
+    border-radius: 4px;
+    padding: .15rem .35rem;
+  }
+  .domain-item .label { font-size: .92rem; }
+
+  /* ── Search box ── */
+  .search-row {
+    display: flex;
+    gap: .6rem;
+    margin-bottom: 1rem;
+  }
+
+  /* ── Form fields ── */
+  label { display: block; font-size: .85rem; color: var(--muted); margin-bottom: .35rem; }
+  .field-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1.25rem; }
+
+  input[type=text], input[type=number] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: .55rem .75rem;
+    font-size: .92rem;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input:focus { border-color: var(--accent); }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .55rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s, transform .08s;
+  }
+  .btn:hover { opacity: .88; }
+  .btn:active { transform: scale(.97); }
+  .btn-primary   { background: var(--accent);  color: #0d1117; }
+  .btn-success   { background: var(--accent2); color: #0d1117; }
+  .btn-ghost     { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-sm        { padding: .35rem .8rem; font-size: .82rem; }
+  .btn:disabled  { opacity: .35; cursor: not-allowed; }
+
+  .btn-row { display: flex; gap: .7rem; margin-top: 1.25rem; flex-wrap: wrap; align-items: center; }
+
+  /* ── Patent list ── */
+  .patent-list {
+    list-style: none;
+    display: grid;
+    gap: .4rem;
+    margin: .75rem 0;
+  }
+  .patent-list li {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-size: .88rem;
+    color: var(--muted);
+    padding: .4rem .6rem;
+    background: var(--bg);
+    border-radius: 5px;
+  }
+  .patent-list li .icon { color: var(--accent2); font-size: .95rem; }
+
+  /* ── Context pill row ── */
+  .pills { display: flex; gap: .6rem; flex-wrap: wrap; margin: .75rem 0; }
+  .pill {
+    font-size: .78rem;
+    padding: .25rem .7rem;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .pill span { color: var(--text); font-weight: 600; }
+
+  /* ── Results ── */
+  .result-card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: .75rem;
+    transition: border-color .15s;
+  }
+  .result-card:hover { border-color: var(--accent); }
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .8rem 1rem;
+    cursor: pointer;
+    background: var(--bg);
+    gap: 1rem;
+  }
+  .result-header .fname { font-size: .9rem; font-weight: 600; color: var(--accent); }
+  .result-header .preview {
+    font-size: .82rem;
+    color: var(--muted);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .result-header .chevron { color: var(--muted); transition: transform .2s; font-size: .9rem; }
+  .result-card.open .chevron { transform: rotate(90deg); }
+  .result-body {
+    display: none;
+    padding: 1rem;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .result-card.open .result-body { display: block; }
+  .result-body .section-label {
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--muted);
+    margin-bottom: .35rem;
+  }
+  .result-body .section-value {
+    font-size: .88rem;
+    color: var(--text);
+    margin-bottom: 1rem;
+    white-space: pre-wrap;
+    line-height: 1.55;
+  }
+  .opp-box {
+    background: rgba(63,185,80,.08);
+    border: 1px solid rgba(63,185,80,.3);
+    border-radius: 6px;
+    padding: .75rem 1rem;
+    font-size: .9rem;
+    color: var(--text);
+    line-height: 1.55;
+  }
+
+  /* ── Step indicator ── */
+  .steps {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .step {
+    flex: 1;
+    text-align: center;
+    padding: .55rem;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--bg);
+    border-right: 1px solid var(--border);
+    transition: background .2s, color .2s;
+  }
+  .step:last-child { border-right: none; }
+  .step.active { background: var(--surface); color: var(--accent); }
+  .step.done   { background: var(--surface); color: var(--accent2); }
+
+  /* ── Spinner ── */
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .65rem 1.25rem;
+    font-size: .88rem;
+    color: var(--text);
+    box-shadow: 0 4px 20px rgba(0,0,0,.5);
+    transition: transform .3s ease;
+    z-index: 999;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── No-results / empty state ── */
+  .empty {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: var(--muted);
+    font-size: .92rem;
+  }
+
+  @media (max-width: 520px) {
+    .field-group { grid-template-columns: 1fr; }
+    header h1 { font-size: 1.35rem; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header>
+    <h1>IP-Native Venture Engine</h1>
+    <p>Identify venture opportunities hidden in patent landscapes</p>
+  </header>
+
+  <!-- Step indicator -->
+  <div class="steps" id="steps">
+    <div class="step active" id="s0">Menu</div>
+    <div class="step" id="s1">Domain &amp; Years</div>
+    <div class="step" id="s2">Patents</div>
+    <div class="step" id="s3">Results</div>
+  </div>
+
+  <!-- ── Screen 0: Main Menu ── -->
+  <div class="screen active" id="screen-menu">
+    <div class="card">
+      <h2>Main Menu</h2>
+      <p style="color:var(--muted);font-size:.92rem;margin-bottom:1.25rem;">
+        Welcome. Select an action to begin.
+      </p>
+      <div style="display:grid;gap:.75rem;">
+        <button class="btn btn-primary" onclick="goTo(1)">
+          &#9658; Start new analysis session
+        </button>
+        <button class="btn btn-ghost" id="btn-domains" onclick="showDomainManager()">
+          &#9783; Browse domains
+        </button>
+      </div>
+    </div>
+
+    <!-- Domain browser (hidden until clicked) -->
+    <div class="card" id="domain-browser" style="display:none;">
+      <h2>All Domains</h2>
+      <div id="domain-browser-list" class="domain-grid"></div>
+    </div>
+  </div>
+
+  <!-- ── Screen 1: Domain & Years ── -->
+  <div class="screen" id="screen-domain">
+    <div class="card">
+      <h2>Step 1 &mdash; Select Domain</h2>
+      <div class="search-row">
+        <input type="text" id="domain-search" placeholder="Filter by keyword..." oninput="filterDomains()" />
+        <button class="btn btn-ghost btn-sm" onclick="clearSearch()">Clear</button>
+      </div>
+      <div class="domain-grid" id="domain-list"></div>
+    </div>
+
+    <div class="card">
+      <h2>Step 1 &mdash; Year Range</h2>
+      <div class="field-group">
+        <div>
+          <label>Patent start year</label>
+          <input type="number" id="year-start" value="1980" min="1800" max="2100" />
+        </div>
+        <div>
+          <label>Patent end year</label>
+          <input type="number" id="year-end" value="2015" min="1800" max="2100" />
+        </div>
+        <div>
+          <label>Evaluation year</label>
+          <input type="number" id="year-eval" value="2026" min="1800" max="2200" />
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goTo(0)">&#8592; Back</button>
+        <button class="btn btn-primary" id="btn-next-1" onclick="confirmDomainAndYears()" disabled>
+          Next &#8594;
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screen 2: Confirm & Run ── -->
+  <div class="screen" id="screen-run">
+    <div class="card">
+      <h2>Step 2 &mdash; Confirm &amp; Run</h2>
+
+      <div class="pills" id="context-pills"></div>
+
+      <p style="font-size:.88rem;color:var(--muted);margin:.5rem 0 .9rem;">Patents found in <code>patents/</code>:</p>
+      <ul class="patent-list" id="patent-list"></ul>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goTo(1)">&#8592; Back</button>
+        <button class="btn btn-success" id="btn-run" onclick="runEngine()">
+          &#9654; Run analysis
+        </button>
+        <span id="run-spinner" style="display:none;"><span class="spinner"></span> Analysing...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screen 3: Results ── -->
+  <div class="screen" id="screen-results">
+    <div class="card">
+      <h2>Step 3 &mdash; Results</h2>
+      <div class="pills" id="result-pills"></div>
+      <div id="results-list"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goTo(0)">&#8592; New analysis</button>
+    </div>
+  </div>
+
+</div><!-- /.shell -->
+
+<div id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  domains: [],
+  selectedDomain: null,
+  patents: [],
+  context: null,
+  results: [],
+};
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+async function boot() {
+  const res = await fetch('/api/domains');
+  state.domains = await res.json();
+  renderDomainList('domain-list', state.domains, selectDomain);
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+function goTo(n) {
+  document.querySelectorAll('.screen').forEach((s, i) => {
+    s.classList.toggle('active', i === n);
+  });
+  // Step indicator
+  ['s0','s1','s2','s3'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.className = 'step' + (i === n ? ' active' : i < n ? ' done' : '');
+  });
+  if (n === 2) loadPatents();
+}
+
+// ── Domain list helpers ────────────────────────────────────────────────────
+function renderDomainList(containerId, domains, onClickFn) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  if (domains.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:.88rem;">No matches.</p>';
+    return;
+  }
+  domains.forEach(d => {
+    const item = document.createElement('div');
+    item.className = 'domain-item' +
+      (state.selectedDomain && state.selectedDomain.id === d.id ? ' selected' : '');
+    item.dataset.id = d.id;
+    item.innerHTML = `<span class="id-badge">${d.id}</span><span class="label">${d.label}</span>`;
+    item.addEventListener('click', () => onClickFn(d));
+    el.appendChild(item);
+  });
+}
+
+function selectDomain(d) {
+  state.selectedDomain = d;
+  renderDomainList('domain-list', filteredDomains(), selectDomain);
+  document.getElementById('btn-next-1').disabled = false;
+}
+
+function filteredDomains() {
+  const kw = document.getElementById('domain-search').value.toLowerCase();
+  return kw ? state.domains.filter(d => d.label.toLowerCase().includes(kw)) : state.domains;
+}
+
+function filterDomains() {
+  renderDomainList('domain-list', filteredDomains(), selectDomain);
+}
+
+function clearSearch() {
+  document.getElementById('domain-search').value = '';
+  filterDomains();
+}
+
+// ── Domain browser (menu screen) ──────────────────────────────────────────
+function showDomainManager() {
+  const browser = document.getElementById('domain-browser');
+  const isVisible = browser.style.display !== 'none';
+  browser.style.display = isVisible ? 'none' : 'block';
+  if (!isVisible) {
+    renderDomainList('domain-browser-list', state.domains, () => {});
+  }
+}
+
+// ── Confirm domain & years ─────────────────────────────────────────────────
+function confirmDomainAndYears() {
+  if (!state.selectedDomain) { toast('Please select a domain first.'); return; }
+  const ys = parseInt(document.getElementById('year-start').value);
+  const ye = parseInt(document.getElementById('year-end').value);
+  const yc = parseInt(document.getElementById('year-eval').value);
+  if (isNaN(ys) || isNaN(ye) || isNaN(yc)) { toast('Please fill in all year fields.'); return; }
+  if (ye < ys) { toast('End year must be >= start year.'); return; }
+  if (yc < ys) { toast('Evaluation year must be >= start year.'); return; }
+
+  state.context = {
+    domain_id:          state.selectedDomain.id,
+    domain_label:       state.selectedDomain.label,
+    patent_start_year:  ys,
+    patent_end_year:    ye,
+    current_year:       yc,
+  };
+  goTo(2);
+}
+
+// ── Load patents ───────────────────────────────────────────────────────────
+async function loadPatents() {
+  const res = await fetch('/api/patents');
+  state.patents = await res.json();
+
+  // Context pills
+  const ctx = state.context;
+  document.getElementById('context-pills').innerHTML = `
+    <div class="pill">Domain: <span>${ctx.domain_label}</span></div>
+    <div class="pill">Years: <span>${ctx.patent_start_year} &ndash; ${ctx.patent_end_year}</span></div>
+    <div class="pill">Eval: <span>${ctx.current_year}</span></div>
+  `;
+
+  // Patent list
+  const ul = document.getElementById('patent-list');
+  ul.innerHTML = '';
+  if (state.patents.length === 0) {
+    ul.innerHTML = '<li style="color:var(--warn);">No .txt files found in patents/ directory.</li>';
+    document.getElementById('btn-run').disabled = true;
+  } else {
+    state.patents.forEach(fname => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="icon">&#128196;</span> ${fname}`;
+      ul.appendChild(li);
+    });
+    document.getElementById('btn-run').disabled = false;
+  }
+}
+
+// ── Run engine ────────────────────────────────────────────────────────────
+async function runEngine() {
+  document.getElementById('btn-run').style.display = 'none';
+  document.getElementById('run-spinner').style.display = 'inline-flex';
+
+  try {
+    const res = await fetch('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state.context),
+    });
+    state.results = await res.json();
+    renderResults();
+    goTo(3);
+  } catch (e) {
+    toast('Error running engine: ' + e.message);
+  } finally {
+    document.getElementById('btn-run').style.display = 'inline-flex';
+    document.getElementById('run-spinner').style.display = 'none';
+  }
+}
+
+// ── Render results ────────────────────────────────────────────────────────
+function renderResults() {
+  const ctx = state.context;
+  document.getElementById('result-pills').innerHTML = `
+    <div class="pill">Domain: <span>${ctx.domain_label}</span></div>
+    <div class="pill">Years: <span>${ctx.patent_start_year} &ndash; ${ctx.patent_end_year}</span></div>
+    <div class="pill">Eval: <span>${ctx.current_year}</span></div>
+    <div class="pill">Results: <span>${state.results.length}</span></div>
+  `;
+
+  const container = document.getElementById('results-list');
+  container.innerHTML = '';
+
+  if (state.results.length === 0) {
+    container.innerHTML = '<div class="empty">No results returned.</div>';
+    return;
+  }
+
+  state.results.forEach((item, i) => {
+    const r = item.result;
+    const preview = (r.preview || '').replace(/\n/g, ' ');
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = `
+      <div class="result-header" onclick="toggleResult(this.parentElement)">
+        <div class="fname">${item.filename}</div>
+        <div class="preview">${preview}</div>
+        <div class="chevron">&#9658;</div>
+      </div>
+      <div class="result-body">
+        <div class="section-label">Preview</div>
+        <div class="section-value">${preview}</div>
+        <div class="section-label">Opportunity</div>
+        <div class="opp-box">${r.dummy_opportunity}</div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function toggleResult(card) {
+  card.classList.toggle('open');
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>
