@@ -1,7 +1,7 @@
 """
 Core processing logic and LLM integration.
 
-Set OPENAI_API_KEY in your environment to enable real analysis.
+Set ANTHROPIC_API_KEY in your environment to enable real analysis.
 Without a key the module falls back to a clearly-labelled dummy response.
 """
 
@@ -65,7 +65,7 @@ def _dummy_result(text: str, context: dict) -> dict:
     return {
         "summary": (
             "No API key present — this is a placeholder summary. "
-            "Set OPENAI_API_KEY to get real analysis."
+            "Set ANTHROPIC_API_KEY to get real analysis."
         ),
         "original_assumptions": [
             "Placeholder assumption A",
@@ -103,10 +103,10 @@ def process_patent(text: str, context: dict) -> dict:
     Returns the standard result dict (see PROMPT_TEMPLATE for schema).
     Falls back to a dummy dict if no API key is set or if the LLM call fails.
     """
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
 
     if not api_key:
-        print("Warning: No OPENAI_API_KEY found — using dummy process_patent.")
+        print("Warning: No ANTHROPIC_API_KEY found — using dummy process_patent.")
         return _dummy_result(text, context)
 
     prompt = PROMPT_TEMPLATE.format(
@@ -118,16 +118,21 @@ def process_patent(text: str, context: dict) -> dict:
     )
 
     try:
-        from openai import OpenAI  # imported here so the module loads without openai installed
+        from anthropic import Anthropic  # imported here so the module loads without anthropic installed
 
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
+        client = Anthropic(api_key=api_key)
+        message = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1024,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            response_format={"type": "json_object"},
         )
-        raw = response.choices[0].message.content
+        raw = message.content[0].text
+        # Strip markdown fences if the model added them
+        raw = raw.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
         result = json.loads(raw)
 
     except json.JSONDecodeError as exc:

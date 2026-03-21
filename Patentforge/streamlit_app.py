@@ -16,9 +16,9 @@ from ip_venture_engine.engine import load_patent_texts, run_engine
 # ── Inject API key from Streamlit secrets into the environment ───────────────
 # Works for both local (.streamlit/secrets.toml) and Streamlit Cloud (Secrets UI).
 try:
-    key = st.secrets.get("OPENAI_API_KEY", "")
-    if key and key != "sk-...":
-        os.environ["OPENAI_API_KEY"] = key
+    key = st.secrets.get("ANTHROPIC_API_KEY", "")
+    if key and not key.startswith("your-"):
+        os.environ["ANTHROPIC_API_KEY"] = key
 except Exception:
     pass  # secrets not configured — engine will use dummy fallback
 
