@@ -248,29 +248,71 @@ elif st.session_state.step == 3:
     if not results:
         st.info("No results to display.")
     else:
-        # Summary pills
+        # Context summary row
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Results",    len(results))
-        c2.metric("Start year", ctx["patent_start_year"])
-        c3.metric("End year",   ctx["patent_end_year"])
-        c4.metric("Eval year",  ctx["current_year"])
+        c1.metric("Patents analysed", len(results))
+        c2.metric("Start year",  ctx["patent_start_year"])
+        c3.metric("End year",    ctx["patent_end_year"])
+        c4.metric("Eval year",   ctx["current_year"])
         st.caption(f"Domain: **{ctx['domain_label']}**")
         st.markdown("---")
 
         for item in results:
-            res     = item["result"]
-            preview = res["preview"].replace("\n", " ")
-            opp     = res["dummy_opportunity"]
+            res      = item["result"]
+            summary  = res.get("summary", res.get("preview", "")).replace("\n", " ")
+            concepts = res.get("concepts", [])
+            scores   = res.get("scores", {})
+            ms = scores.get("market_size", "—")
+            tf = scores.get("technical_feasibility", "—")
+            df = scores.get("defensibility", "—")
+            first_title = concepts[0].get("title", "—") if concepts else "—"
 
-            with st.expander(f"📄 {item['filename']}  —  {preview[:80]}…"):
-                st.markdown("**Preview**")
-                st.code(res["preview"], language=None)
+            with st.expander(f"📄 **{item['filename']}** — {first_title}"):
 
-                st.markdown("**Opportunity**")
-                st.markdown(
-                    f'<div class="opp-box">{opp}</div>',
-                    unsafe_allow_html=True,
-                )
+                # ── Summary ──
+                st.markdown("#### Summary")
+                st.info(summary)
+
+                # ── Scores ──
+                st.markdown("#### Scores")
+                sc1, sc2, sc3 = st.columns(3)
+                sc1.metric("Market size",          f"{ms}/10")
+                sc2.metric("Technical feasibility", f"{tf}/10")
+                sc3.metric("Defensibility",         f"{df}/10")
+
+                # ── Assumptions & changes ──
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    st.markdown("#### Original assumptions")
+                    for a in res.get("original_assumptions", []):
+                        st.markdown(f"- {a}")
+
+                with col_b:
+                    st.markdown(f"#### What changed by {ctx['current_year']}")
+                    for c in res.get("changes_by_current_year", []):
+                        st.markdown(f"- {c}")
+
+                # ── Concepts ──
+                st.markdown("#### Venture concepts")
+                for i, concept in enumerate(concepts, 1):
+                    with st.container():
+                        st.markdown(f"**{i}. {concept.get('title', '—')}**")
+                        st.markdown(concept.get("description", ""))
+
+                        ci1, ci2 = st.columns(2)
+                        with ci1:
+                            st.markdown("**Ideal customer**")
+                            st.markdown(concept.get("ideal_customer", "—"))
+                            st.markdown("**Why now**")
+                            st.markdown(concept.get("why_now", "—"))
+                        with ci2:
+                            st.markdown("**Moat**")
+                            st.markdown(
+                                f'<div class="opp-box">{concept.get("moat", "—")}</div>',
+                                unsafe_allow_html=True,
+                            )
+                        if i < len(concepts):
+                            st.markdown("---")
 
         st.markdown("---")
         if st.button("↩ Start new analysis", type="primary"):

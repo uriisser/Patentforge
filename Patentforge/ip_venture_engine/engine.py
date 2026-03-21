@@ -1,12 +1,155 @@
-"""Core processing logic and (future) LLM integration stubs."""
+"""
+Core processing logic and LLM integration.
 
+Set OPENAI_API_KEY in your environment to enable real analysis.
+Without a key the module falls back to a clearly-labelled dummy response.
+"""
+
+import json
 import os
 
+# ── Prompt template ───────────────────────────────────────────────────────────
+# Placeholders: {text}, {domain_label}, {patent_start_year},
+#               {patent_end_year}, {current_year}
+
+PROMPT_TEMPLATE = """\
+You are an expert venture-capital analyst and deep-tech strategist.
+
+Analyse the patent below and identify startup opportunities that become \
+feasible by {current_year}, given how the world has changed since the patent \
+was originally filed.
+
+## Patent text
+{text}
+
+## Context
+- Domain: {domain_label}
+- Patent filing window: {patent_start_year}–{patent_end_year}
+- Current evaluation year: {current_year}
+
+## Instructions
+Return ONLY a single JSON object — no markdown fences, no explanation — that \
+strictly matches this schema (scores are integers 1–10):
+
+{{
+  "summary": "Short technical summary of the invention (2–3 sentences).",
+  "original_assumptions": [
+    "Assumption the inventors had to make that is no longer true",
+    "..."
+  ],
+  "changes_by_current_year": [
+    "Concrete change by {current_year} that affects feasibility or market",
+    "..."
+  ],
+  "concepts": [
+    {{
+      "title": "Punchy startup name / concept title",
+      "description": "2–4 sentences describing the product or service.",
+      "ideal_customer": "Who would pay for this and why.",
+      "why_now": "What changed that makes this the right moment.",
+      "moat": "IP, data, infrastructure, or regulatory advantages."
+    }}
+  ],
+  "scores": {{
+    "market_size": 1,
+    "technical_feasibility": 1,
+    "defensibility": 1
+  }}
+}}
+"""
+
+
+# ── Dummy fallback ────────────────────────────────────────────────────────────
+
+def _dummy_result(text: str, context: dict) -> dict:
+    return {
+        "summary": (
+            "No API key present — this is a placeholder summary. "
+            "Set OPENAI_API_KEY to get real analysis."
+        ),
+        "original_assumptions": [
+            "Placeholder assumption A",
+            "Placeholder assumption B",
+        ],
+        "changes_by_current_year": [
+            "Placeholder change X",
+            "Placeholder change Y",
+        ],
+        "concepts": [
+            {
+                "title": "Example Venture Concept (dummy)",
+                "description": "Placeholder product description.",
+                "ideal_customer": "Placeholder customer segment.",
+                "why_now": "Placeholder timing rationale.",
+                "moat": "Placeholder competitive advantage.",
+            }
+        ],
+        "scores": {
+            "market_size": 1,
+            "technical_feasibility": 1,
+            "defensibility": 1,
+        },
+        "preview": text[:150].strip(),
+        "context": context,
+    }
+
+
+# ── Main processing function ──────────────────────────────────────────────────
+
+def process_patent(text: str, context: dict) -> dict:
+    """
+    Analyse a single patent against the given context.
+
+    Returns the standard result dict (see PROMPT_TEMPLATE for schema).
+    Falls back to a dummy dict if no API key is set or if the LLM call fails.
+    """
+    api_key = os.environ.get("OPENAI_API_KEY")
+
+    if not api_key:
+        print("Warning: No OPENAI_API_KEY found — using dummy process_patent.")
+        return _dummy_result(text, context)
+
+    prompt = PROMPT_TEMPLATE.format(
+        text=text,
+        domain_label=context["domain_label"],
+        patent_start_year=context["patent_start_year"],
+        patent_end_year=context["patent_end_year"],
+        current_year=context["current_year"],
+    )
+
+    try:
+        from openai import OpenAI  # imported here so the module loads without openai installed
+
+        client = OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            response_format={"type": "json_object"},
+        )
+        raw = response.choices[0].message.content
+        result = json.loads(raw)
+
+    except json.JSONDecodeError as exc:
+        print(f"Warning: JSON parse error from LLM ({exc}) — falling back to dummy.")
+        result = _dummy_result(text, context)
+
+    except Exception as exc:  # network error, auth error, quota, etc.
+        print(f"Warning: LLM call failed ({exc}) — falling back to dummy.")
+        result = _dummy_result(text, context)
+
+    # Always attach preview + context regardless of which path we took
+    result.setdefault("preview", text[:150].strip())
+    result.setdefault("context", context)
+    return result
+
+
+# ── File loader ───────────────────────────────────────────────────────────────
 
 def load_patent_texts(patents_dir: str = "patents") -> list:
     """
     Returns list of (filename, text) for all .txt files in patents_dir.
-    Resolves the path relative to this file's directory if not absolute.
+    Resolves path relative to this file's directory if not absolute.
     """
     if not os.path.isabs(patents_dir):
         base = os.path.dirname(os.path.abspath(__file__))
@@ -26,34 +169,12 @@ def load_patent_texts(patents_dir: str = "patents") -> list:
     return results
 
 
-def process_patent(text: str, context: dict) -> dict:
-    """
-    Analyse a single patent text against the given context.
-    Currently a stub — no external API calls.
-
-    Returns a dict with:
-      - preview:            first 150 characters of text
-      - context:            the context dict passed in
-      - dummy_opportunity:  placeholder venture-opportunity string
-    """
-    preview = text[:150].strip()
-    return {
-        "preview": preview,
-        "context": context,
-        "dummy_opportunity": (
-            "Example opportunity idea based on this patent and context. "
-            "(Replace with LLM call in engine.py::process_patent.)"
-        ),
-    }
-
+# ── Engine runner ─────────────────────────────────────────────────────────────
 
 def run_engine(patents: list, context: dict) -> list:
     """
-    Process a list of (filename, text) tuples and return a list of result dicts.
-
-    Each result dict contains:
-      - filename
-      - result  (dict from process_patent)
+    Process a list of (filename, text) tuples.
+    Returns list of {"filename": str, "result": dict}.
     """
     results = []
     for filename, text in patents:

@@ -238,6 +238,13 @@ def _truncate(text: str, width: int = 55) -> str:
     return text if len(text) <= width else text[:width - 1] + "..."
 
 
+def _score_bar(value: int, total: int = 10, width: int = 10) -> str:
+    """Return a simple ASCII bar, e.g. [######    ] 6/10"""
+    filled = round(value / total * width)
+    bar = "#" * filled + "." * (width - filled)
+    return f"[{bar}] {value}/{total}"
+
+
 def screen_show_results(results: list, context: dict) -> None:
     """
     Show a numbered list of results and allow drilling into individual items.
@@ -255,10 +262,20 @@ def screen_show_results(results: list, context: dict) -> None:
         print(f"  {len(results)} result(s) for domain: {context['domain_label']}\n")
 
         for i, item in enumerate(results, 1):
-            preview = item["result"]["preview"].replace("\n", " ")
-            print(f"  {i:>2})  {item['filename']}  --  {_truncate(preview)}")
+            res     = item["result"]
+            summary = res.get("summary", res.get("preview", "")).replace("\n", " ")
+            concept = (res.get("concepts") or [{}])[0]
+            title   = concept.get("title", "—")
+            scores  = res.get("scores", {})
+            ms = scores.get("market_size", "?")
+            tf = scores.get("technical_feasibility", "?")
+            df = scores.get("defensibility", "?")
+            print(f"  {i:>2})  {item['filename']}")
+            print(f"       Summary : {_truncate(summary, 65)}")
+            print(f"       Concept : {_truncate(title, 65)}")
+            print(f"       Scores  : Market {ms}/10  |  Feasibility {tf}/10  |  Defensibility {df}/10")
+            print()
 
-        print()
         print("  Enter result number to view details, or 'b' to go back:")
         nav = input("  > ").strip().lower()
 
@@ -281,17 +298,51 @@ def _show_result_detail(item: dict, context: dict) -> None:
     while True:
         _print_header("Result Detail")
         print()
-        print(f"  Filename : {item['filename']}")
-        print(f"  Domain   : [{context['domain_id']}] {context['domain_label']}")
-        print(f"  Years    : {context['patent_start_year']} - {context['patent_end_year']}")
-        print(f"  Eval yr  : {context['current_year']}")
+        print(f"  File   : {item['filename']}")
+        print(f"  Domain : [{context['domain_id']}] {context['domain_label']}")
+        print(f"  Years  : {context['patent_start_year']} - {context['patent_end_year']}  |  Eval: {context['current_year']}")
         print()
-        print("  Preview:")
-        print(f"  {res['preview']}")
+
+        # Summary
+        print(f"  SUMMARY")
+        print(f"  {res.get('summary', '—')}")
         print()
-        print("  Opportunity:")
-        print(f"  {res['dummy_opportunity']}")
-        print()
+
+        # Original assumptions
+        assumptions = res.get("original_assumptions", [])
+        if assumptions:
+            print("  ORIGINAL ASSUMPTIONS")
+            for a in assumptions:
+                print(f"    - {a}")
+            print()
+
+        # What changed
+        changes = res.get("changes_by_current_year", [])
+        if changes:
+            print(f"  WHAT CHANGED BY {context['current_year']}")
+            for c in changes:
+                print(f"    - {c}")
+            print()
+
+        # Concepts
+        concepts = res.get("concepts", [])
+        for idx, concept in enumerate(concepts, 1):
+            print(f"  CONCEPT {idx}: {concept.get('title', '—')}")
+            print(f"    Description    : {concept.get('description', '—')}")
+            print(f"    Ideal customer : {concept.get('ideal_customer', '—')}")
+            print(f"    Why now        : {concept.get('why_now', '—')}")
+            print(f"    Moat           : {concept.get('moat', '—')}")
+            print()
+
+        # Scores
+        scores = res.get("scores", {})
+        if scores:
+            print("  SCORES")
+            print(f"    Market size          : {_score_bar(scores.get('market_size', 1))}")
+            print(f"    Technical feasibility: {_score_bar(scores.get('technical_feasibility', 1))}")
+            print(f"    Defensibility        : {_score_bar(scores.get('defensibility', 1))}")
+            print()
+
         print("  'b' to return to results list.")
         nav = input("  > ").strip().lower()
         if nav == "b":
