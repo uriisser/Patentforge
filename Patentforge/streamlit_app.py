@@ -42,6 +42,17 @@ if key and not key.startswith("your-"):
             messages=[{"role": "user", "content": "say ok"}],
         )
         st.sidebar.success("API call OK!")
+        from ip_venture_engine.engine import process_patent
+        test_result = process_patent("A method for cooling data centers using immersion.", {
+            "domain_label": "AI infrastructure",
+            "patent_start_year": 1980,
+            "patent_end_year": 2015,
+            "current_year": 2026,
+        })
+        if "No API key" in test_result.get("summary", ""):
+            st.sidebar.error(f"process_patent fallback! summary: {test_result['summary'][:80]}")
+        else:
+            st.sidebar.success(f"process_patent OK: {test_result['summary'][:60]}")
     except Exception as e:
         st.sidebar.error(f"API call failed: {e}")
 else:
