@@ -144,7 +144,7 @@ with st.sidebar:
     st.caption("Prototype · standard library + Streamlit")
 
 # ── Header ───────────────────────────────────────────────────────────────────
-st.title("IP-Native Venture Engine")
+st.title("IP-Native Venture Engine [v5]")
 st.caption("Identify venture opportunities hidden in patent landscapes.")
 st.markdown("---")
 
