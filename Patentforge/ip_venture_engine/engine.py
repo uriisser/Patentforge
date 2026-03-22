@@ -142,6 +142,7 @@ def process_patent(text: str, context: dict, api_key: str = None) -> dict:
     except Exception as exc:  # network error, auth error, quota, etc.
         print(f"Warning: LLM call failed ({exc}) — falling back to dummy.")
         result = _dummy_result(text, context)
+        result["_error"] = str(exc)
 
     # Always attach preview + context regardless of which path we took
     result.setdefault("preview", text[:150].strip())

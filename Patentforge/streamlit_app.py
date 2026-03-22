@@ -50,7 +50,8 @@ if key and not key.startswith("your-"):
             "current_year": 2026,
         }, api_key=key)
         if "No API key" in test_result.get("summary", ""):
-            st.sidebar.error(f"process_patent fallback! summary: {test_result['summary'][:80]}")
+            err = test_result.get("_error", "no api_key in environ")
+            st.sidebar.error(f"Fallback! Error: {err[:150]}")
         else:
             st.sidebar.success(f"process_patent OK: {test_result['summary'][:60]}")
     except Exception as e:
