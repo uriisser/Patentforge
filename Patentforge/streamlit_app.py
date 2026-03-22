@@ -20,7 +20,7 @@ try:
     if key and not key.startswith("your-"):
         os.environ["ANTHROPIC_API_KEY"] = key
 except Exception:
-    pass  # secrets not configured — engine will use dummy fallback
+    key = ""
 
 # ── Page config ─────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -29,6 +29,12 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# ── Debug: show key status ───────────────────────────────────────────────────
+if key and not key.startswith("your-"):
+    st.sidebar.success(f"API key loaded: {key[:12]}…")
+else:
+    st.sidebar.error(f"No valid API key. Value: '{key[:20] if key else 'empty'}'")
 
 # ── Custom CSS ───────────────────────────────────────────────────────────────
 st.markdown("""
