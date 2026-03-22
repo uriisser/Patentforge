@@ -106,8 +106,9 @@ def process_patent(text: str, context: dict, api_key: str = None) -> dict:
     api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
 
     if not api_key:
-        print("Warning: No ANTHROPIC_API_KEY found — using dummy process_patent.")
-        return _dummy_result(text, context)
+        result = _dummy_result(text, context)
+        result["_error"] = f"api_key param was: {repr(api_key)}, environ key: {repr(os.environ.get('ANTHROPIC_API_KEY', 'MISSING'))}"
+        return result
 
     prompt = PROMPT_TEMPLATE.format(
         text=text,
