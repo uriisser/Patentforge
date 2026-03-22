@@ -33,6 +33,17 @@ st.set_page_config(
 # ── Debug: show key status ───────────────────────────────────────────────────
 if key and not key.startswith("your-"):
     st.sidebar.success(f"API key loaded: {key[:12]}…")
+    try:
+        from anthropic import Anthropic
+        client = Anthropic(api_key=key)
+        msg = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=10,
+            messages=[{"role": "user", "content": "say ok"}],
+        )
+        st.sidebar.success("API call OK!")
+    except Exception as e:
+        st.sidebar.error(f"API call failed: {e}")
 else:
     st.sidebar.error(f"No valid API key. Value: '{key[:20] if key else 'empty'}'")
 
