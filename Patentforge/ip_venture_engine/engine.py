@@ -96,14 +96,14 @@ def _dummy_result(text: str, context: dict) -> dict:
 
 # ── Main processing function ──────────────────────────────────────────────────
 
-def process_patent(text: str, context: dict) -> dict:
+def process_patent(text: str, context: dict, api_key: str = None) -> dict:
     """
     Analyse a single patent against the given context.
 
     Returns the standard result dict (see PROMPT_TEMPLATE for schema).
     Falls back to a dummy dict if no API key is set or if the LLM call fails.
     """
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
 
     if not api_key:
         print("Warning: No ANTHROPIC_API_KEY found — using dummy process_patent.")
@@ -176,13 +176,13 @@ def load_patent_texts(patents_dir: str = "patents") -> list:
 
 # ── Engine runner ─────────────────────────────────────────────────────────────
 
-def run_engine(patents: list, context: dict) -> list:
+def run_engine(patents: list, context: dict, api_key: str = None) -> list:
     """
     Process a list of (filename, text) tuples.
     Returns list of {"filename": str, "result": dict}.
     """
     results = []
     for filename, text in patents:
-        result = process_patent(text, context)
+        result = process_patent(text, context, api_key=api_key)
         results.append({"filename": filename, "result": result})
     return results

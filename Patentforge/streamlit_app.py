@@ -48,7 +48,7 @@ if key and not key.startswith("your-"):
             "patent_start_year": 1980,
             "patent_end_year": 2015,
             "current_year": 2026,
-        })
+        }, api_key=key)
         if "No API key" in test_result.get("summary", ""):
             st.sidebar.error(f"process_patent fallback! summary: {test_result['summary'][:80]}")
         else:
@@ -267,7 +267,7 @@ elif st.session_state.step == 2:
         with col_run:
             if st.button("▶  Run analysis", type="primary", use_container_width=True):
                 with st.spinner("Running engine…"):
-                    st.session_state.results = run_engine(patents, ctx)
+                    st.session_state.results = run_engine(patents, ctx, api_key=key)
                 go(3)
                 st.rerun()
 
