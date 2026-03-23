@@ -124,7 +124,7 @@ def process_patent(text: str, context: dict, api_key: str = None) -> dict:
         client = Anthropic(api_key=api_key)
         message = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=1024,
+            max_tokens=4096,
             messages=[{"role": "user", "content": prompt}],
         )
         raw = message.content[0].text
