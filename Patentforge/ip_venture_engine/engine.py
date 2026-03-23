@@ -139,6 +139,7 @@ def process_patent(text: str, context: dict, api_key: str = None) -> dict:
     except json.JSONDecodeError as exc:
         print(f"Warning: JSON parse error from LLM ({exc}) — falling back to dummy.")
         result = _dummy_result(text, context)
+        result["_error"] = f"JSON parse error: {exc} | raw={raw[:200]}"
 
     except Exception as exc:  # network error, auth error, quota, etc.
         print(f"Warning: LLM call failed ({exc}) — falling back to dummy.")
